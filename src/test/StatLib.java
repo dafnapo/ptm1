@@ -1,7 +1,4 @@
-package com;
-
-import test.Line;
-import test.Point;
+package test;
 
 public class StatLib {
     // simple average
@@ -14,8 +11,11 @@ public class StatLib {
     // returns the variance of X and Y
     public static float var(float[] x) {
         float sum = 0;
-        for (float v : x) sum = sum + (float) Math.pow(v, 2.0);
-        return (float) (sum * (1.0 / x.length) - Math.pow(avg(x), 2.0));
+        float avgX = avg(x);
+        for (float v : x) {
+            sum += Math.pow((v - avgX), 2.0);
+        }
+        return (sum / x.length);
     }
 
     // returns the covariance of X and Y
@@ -31,8 +31,8 @@ public class StatLib {
     // returns the Pearson correlation coefficient of X and Y
     public static float pearson(float[] x, float[] y) {
         float cov = cov(x, y);
-        float sqrtX = (float)Math.sqrt(var(x));
-        float sqrtY = (float)Math.sqrt(var(y));
+        float sqrtX = (float) Math.sqrt(var(x));
+        float sqrtY = (float) Math.sqrt(var(y));
         return (cov / (sqrtX * sqrtY));
     }
 
@@ -54,7 +54,7 @@ public class StatLib {
     // returns the deviation between point p and the line equation of the points
     public static float dev(Point p, Point[] points) {
         Line newLine = linear_reg(points);
-        return Math.abs(p.y - newLine.f(p.x));
+        return dev(p, newLine);
     }
 
     // returns the deviation between point p and the line
