@@ -11,23 +11,24 @@ import java.util.List;
 import java.util.Random;
 
 public class MainTrain {
-	
-	static Random r=new Random();
+
+	static Random r = new Random();
 
 	// this is a simple test to put you on the right track
-	static void generateTrainCSV(float a1,float b1, float a2, float b2){
+	static void generateTrainCSV(float a1, float b1, float a2, float b2) {
 		try {
-			PrintWriter out=new PrintWriter(new FileWriter("trainFile1.csv"));
+			PrintWriter out = new PrintWriter(new FileWriter("trainFile1.csv"));
 			out.println("A,B,C,D");
-			Line ac=new Line(a1,b1);
-			Line bd=new Line(a2,b2);
-			for(int i=1;i<=100;i++){
-				float a=i;
-				float b=r.nextInt(40);
-				out.println(a+","+b+","+(ac.f(a)-0.02+(r.nextInt(40))/100.0f)+","+(bd.f(b)-0.02+(r.nextInt(40))/100.0f));
+			Line ac = new Line(a1, b1);
+			Line bd = new Line(a2, b2);
+			for (int i = 1; i <= 100; i++) {
+				float a = i;
+				float b = r.nextInt(40);
+				out.println(a + "," + b + "," + (ac.f(a) - 0.02 + (r.nextInt(40)) / 100.0f) + "," + (bd.f(b) - 0.02 + (r.nextInt(40)) / 100.0f));
 			}
 			out.close();
-		}catch(IOException e) {}
+		} catch (IOException e) {
+		}
 	}
 
 	static void generateTestCSV(float a1,float b1, float a2, float b2, int anomaly){
@@ -65,8 +66,7 @@ public class MainTrain {
 		}
 
 	}
-	
-	
+
 	public static void main(String[] args) {
 		float a1=1+r.nextInt(10), b1=-50+r.nextInt(100);
 		float a2=1+r.nextInt(20) , b2=-50+r.nextInt(100);
