@@ -1,75 +1,52 @@
 package test;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.*;
+import java.util.*;
 
 public class TimeSeries {
-    private final String fileName;
-    private float[][] dataFile;
-    private String[] criteriaTitles;
-    int numOfRows = 0;
-    public double threshold = 0.9;
+    Map<String, float[]> map = new HashMap<>();
+    String[] names;
 
     public TimeSeries(String csvFileName) {
-        this.fileName = csvFileName;
-    }
-
-    public String getCriteriaTitle(int index) {
-        return criteriaTitles[index];
-    }
-
-    void readCsvFile() {
-        int numOfCriteria = 0, counter = 0;
-        String line, delimiter = ",";
         try {
-            BufferedReader br = new BufferedReader(new FileReader(this.fileName));
-            if ((line = br.readLine()) != null) {
-                String[] values = line.split(delimiter);
-                numOfCriteria = values.length;
-                numOfRows = getNumOfLines(fileName);
-                dataFile = new float[numOfRows][numOfCriteria];
-                criteriaTitles = new String[values.length];
-                System.arraycopy(values, 0, criteriaTitles, 0, numOfCriteria);
+            Scanner s = new Scanner
+                    (new BufferedReader(new FileReader(csvFileName)));
+            Map<Integer, Vector<Float>> map1 = new HashMap<>();
+            names = s.next().split(",");
+            for (int i = 0; i < names.length; i++) {
+                map1.put(i, new Vector<>());
             }
-            while ((line = br.readLine()) != null) {
-                String[] values = line.split(delimiter);
-                for (int i = 0; i < numOfCriteria; i++) {
-                    dataFile[counter][i] = Float.parseFloat(values[i]);
+            while (s.hasNextLine()) {
+                String[] row = s.nextLine().split(",");
+                for (int i = 0; i < row.length; i++) {
+                    if (!row[i].isEmpty())
+                        map1.get(i).add(Float.parseFloat(row[i]));
                 }
-                counter++;
             }
-            br.close();
-        } catch (Exception e) {
+            for (int i = 0; i < names.length; i++) {
+                map.put(names[i], vectorToFloatArray(i, map1));
+            }
+
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
 
-    private int getNumOfLines(String fileName) throws Exception {
-        BufferedReader br = new BufferedReader(new FileReader(fileName));
-        int counter = 0;
-        while (br.readLine() != null)
-            counter++;
-        return counter - 1;
-    }
-
-    public float[][] getDataFile() {
-        return this.dataFile;
-    }
-
-    public float[] getMatrixColumn(int index) {
-        float[] column = new float[numOfRows];
-        for (int row = 0; row < numOfRows; row++) {
-            column[row] = dataFile[row][index];
+    public float[] vectorToFloatArray(int i, Map<Integer, Vector<Float>> map) {
+        int index = 0;
+        Vector<Float> needed = map.get(i);
+        float[] column = new float[needed.size()];
+        for (Float f : needed) {
+            column[index++] = f;
         }
         return column;
     }
 
-    public int getColumnIndexOfCriteria(String criteria) {
-        for (int i = 0; i < criteriaTitles.length; i++) {
-            if (criteria.equals(criteriaTitles[i])) {
-                return i;
-            }
-        }
-        return -1;
+    public float[] getColumn(String s) {
+        return map.get(s);
+    }
+
+    public float getValueAt(String j, int i) {
+        return getColumn(j)[i];
     }
 }

@@ -1,77 +1,74 @@
 package test;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
+
 public class SimpleAnomalyDetector implements TimeSeriesAnomalyDetector {
-    private List<CorrelatedFeatures> correlatedFeatures = new LinkedList<CorrelatedFeatures>();
+    public float CORRELATION_THRESHOLD = (float) 0.9;
+    List<CorrelatedFeatures> correlatedFeatures = new ArrayList<>();
+
+    float p(int i, int j, TimeSeries ts) {
+        return StatLib.pearson(ts.getColumn(ts.names[i]), ts.getColumn(ts.names[j]));
+    }
 
     @Override
     public void learnNormal(TimeSeries ts) {
-        try {
-            ts.readCsvFile();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        float[][] data = ts.getDataFile();
-        for (int j = 0; j < data.length; j++) {
-            float m = 0, c = -1;
-            for (int i = j + 1; i < data[j].length; i++) {
-                float p = Math.abs(StatLib.pearson(ts.getMatrixColumn(j), ts.getMatrixColumn(i)));
-                if (p > m) {
+        for (int i = 0; i < ts.names.length - 1; i++) {
+            float m = CORRELATION_THRESHOLD;
+            int c = -1;
+            float p;
+            for (int j = i + 1; j < ts.names.length; j++) {
+                if ((p = Math.abs(p(i, j, ts))) > m) {
                     m = p;
-                    c = i;
+                    c = j;
                 }
             }
-            if (c != -1 && m * 1.1 > ts.threshold) {
-                Point[] points = getPointFromCorrelatedColumns(ts.getMatrixColumn(j), ts.getMatrixColumn((int) c));
-                Line line = StatLib.linear_reg(points);
-                correlatedFeatures.add(new CorrelatedFeatures(ts.getCriteriaTitle(j),
-                        ts.getCriteriaTitle((int) c), m, line,
-                        (float) getMaxDeviation(line, points)));
+            if (c != (-1)) {
+
+                Point[] points = new Point[ts.getColumn(ts.names[i]).length];
+                for (int j = 0; j < ts.getColumn(ts.names[i]).length; j++) {
+                    points[j] = new Point
+                            (ts.getColumn(ts.names[i])[j], ts.getColumn(ts.names[c])[j]);
+                }
+                Line l = StatLib.linear_reg(points);
+                float max = 0;
+                for (int j = 0; j < ts.getColumn(ts.names[i]).length; j++) {
+                    if (max < Math.abs(StatLib.dev(points[j], l))) {
+                        max = Math.abs(StatLib.dev(points[j], l));
+                    }
+                }
+                correlatedFeatures.add(new CorrelatedFeatures
+                        (ts.names[i], ts.names[c], m, l, (float) (max * 1.1)));
             }
         }
+
     }
 
-    private Object getMaxDeviation(Line line, Point[] points) {
-        float result = 0;
-        for (Point point : points) {
-            float deviation = StatLib.dev(point, line);
-            if (deviation > result)
-                result = deviation;
-        }
-        return result;
-    }
-
-    private Point[] getPointFromCorrelatedColumns(float[] x, float[] y) {
-        Point[] result = new Point[x.length];
-        for (int i = 0; i < x.length; i++) {
-            Point temp = new Point(x[i], y[i]);
-            result[i] = temp;
-        }
-        return result;
-    }
 
     @Override
     public List<AnomalyReport> detect(TimeSeries ts) {
-        List<AnomalyReport> report = new LinkedList<AnomalyReport>();
-        float[][] data = new float[0][];
-        try {
-            ts.readCsvFile();
-            data = ts.getDataFile();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        for (int i = 0; i < ts.numOfRows; i++) {
-            for (CorrelatedFeatures cf : correlatedFeatures) {
-                Point tempPoint = new Point(data[i][ts.getColumnIndexOfCriteria(cf.feature1)],
-                        data[i][ts.getColumnIndexOfCriteria(cf.feature2)]);
-                if (StatLib.dev(tempPoint, cf.lin_reg) > cf.threshold*1.1) {
-                    report.add(new AnomalyReport(cf.feature1 + "-" + cf.feature2, i + 1));
+        learnNormal(ts);
+        List<AnomalyReport> anomalyList = new ArrayList<>();
+
+
+        Point[] points = new Point[ts.getColumn(ts.names[0]).length];
+
+
+        for (int i = 0; i < correlatedFeatures.size(); i++) {
+            for (int j = 0; j < ts.getColumn(ts.names[0]).length; j++) {
+                points[j] = new Point
+                        (ts.getColumn(correlatedFeatures.get(i).feature1)[j],
+                                ts.getColumn(correlatedFeatures.get(i).feature2)[j]);
+            }
+            for (int j = 0; j < points.length; j++) {
+                if (StatLib.dev(points[j], correlatedFeatures.get(i).lin_reg) > correlatedFeatures.get(i).threshold) {
+                    anomalyList.add(new AnomalyReport
+                            (correlatedFeatures.get(i).feature1 + "-" + correlatedFeatures.get(i).feature2, 1 + j));
                 }
             }
         }
-        return report;
+        return anomalyList;
     }
 
     public List<CorrelatedFeatures> getNormalModel() {
