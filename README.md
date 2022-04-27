@@ -1,3 +1,5 @@
 # ptm1
-ptm1 course
+This project written as part of the Advanced Software Programming course.
+
+
 
